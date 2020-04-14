@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using System;
+using System.Linq;
+using System.IO;
+using MLAgents;
+using MLAgents.Sensors;
 
 public class Transporter_Arena : MonoBehaviour
 {
@@ -10,10 +14,14 @@ public class Transporter_Arena : MonoBehaviour
     // public Tball tball;
     public GameObject spawnbox;
     public GameObject sinkbox;
-    public TextMeshPro cumulative_R;
+    // public TextMeshPro cumulative_R;
     public TextMeshPro timeText;
     private List<Tball> Tballs;
     public int NumberAgents;
+
+    // public RayPerceptionSensor Rayperceptionsensor;
+
+    // string filename = "D:/ml-agents-master/ml-agents-master/ObservationData/test1.csv"; 
 
         private void Start()
     {
@@ -89,12 +97,12 @@ public class Transporter_Arena : MonoBehaviour
             } 
         else if (p.GetComponent<Transform>().childCount > 4)
             {
-                p.GetComponent<Transporter_agent>().AgentReset();
+                p.GetComponent<Transporter_agent>().OnEpisodeBegin();
                 // Debug.Log("too many balls carried..");
             } 
         // else if (Math.Abs(p.GetComponent<Transform>().position.y - 0.35) > 0.5)
         //     {
-        //         // p.GetComponent<Transporter_agent>().AgentReset();
+        //         // p.GetComponent<Transporter_agent>().OnEpisodeBegin();
         //         // Debug.Log("too many balls carried..");
         //     } 
     }
@@ -117,6 +125,22 @@ public class Transporter_Arena : MonoBehaviour
         // timeText.text = agent_p.StepCount.ToString("0");
         // timeText.text =tt.ToString("0.0");
         UpdateAgentProperties();
+
+        // using (var writer = new StreamWriter(filename))
+        //     {
+        //         // string AllSensorsObs = null;
+        //         GameObject[] agents = GameObject.FindGameObjectsWithTag("agent");
+        //         foreach (GameObject p in agents)
+        //         {
+        //             float[] rowarray = p.GetComponent<RayPerceptionSensor>().M_Observations_get;
+        //             // float[] rowarray = row.Cast<float>().ToArray(); // cast it as an array of ints
+        //             string m_data_string = string.Join(",", rowarray); //convert array to string separated by commas
+        //             // AllSensorsObs += "," + m_data_string;
+        //             writer.WriteLine(m_data_string);  //write each line to csv
+        //         }
+                
+
+        //     }
         
     }
 
@@ -134,3 +158,5 @@ public class Transporter_Arena : MonoBehaviour
     }
 
 }
+
+//make a section using EndEpisode() when only green balls captured

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAgents.Sensors;
 using MLAgents;
+using System.Linq;
+using System.IO;
 
 public class Transporter_agent : Agent
 {
@@ -12,6 +14,8 @@ public class Transporter_agent : Agent
     public float speed;
     public int ID;
 
+    string filename = "D:/ml-agents-master/ml-agents-master/ObservationData/test1.csv";
+
     private Transporter_Arena transporter_arena;//since this is the parent object it cant be linked in as a private var
     public GameObject Sphere;
     public GameObject Sphere1;
@@ -19,29 +23,48 @@ public class Transporter_agent : Agent
     public int item_carried = 0;//0,1,2
     public int has_passed = 0;//0,1,2
     public int has_received = 0;
+    
 
-    public override void InitializeAgent()
+    public override void Initialize()
     {
-        base.InitializeAgent();
+        base.Initialize();
         rb = GetComponent<Rigidbody>();
         transporter_arena = GetComponentInParent<Transporter_Arena>();
 
     }
 
-    // Update is called once per frame
-    // void FixedUpdate()
+    // // // Update is called once per frame
+    // void FixedUpdate() //it doesnt seem possible to pull in data from the sensor components. specifically the raycast. unity may fix later
     // {
         
+    //     using(var writer = new StreamWriter(filename, append: true))
+    //     {
+    //         // SensorComponent[] sensors = GetComponents<SensorComponent>();
+    //         // RayPerceptionSensor sensor = gameObject.GetComponent<RayPerceptionSensor>();
+    //         string AllSensorsObs = null;
+    //         // foreach (var component in Sensorlist)
+    //         // {
+            
+    //         float[] rowarray = sensor.M_Observations_get.Cast<float>().ToArray(); // cast it as an array of ints
+    //         string sensor_string = string.Join(",", rowarray); //convert array to string separated by commas
+    //         AllSensorsObs += "," + sensor_string;
+            
+    //         // }
+    //         writer.WriteLine(AllSensorsObs);  //write each line to csv
+    //     }
     // }
+
     
     public override void CollectObservations(VectorSensor sensor)
     {
         sensor.AddObservation(transform.forward);
         sensor.AddOneHotObservation((int)item_carried, 3);
         sensor.AddOneHotObservation(ID, 6);
+
+
     }
 
-    public override void AgentAction(float[] vectorAction)
+    public override void OnActionReceived(float[] vectorAction)
     {
         var forward_amount = vectorAction[0];
         var rotationAxis = (int)vectorAction[1]; 
@@ -65,6 +88,7 @@ public class Transporter_agent : Agent
         // transform.position += moveVector;
 
         AddReward(-1f / maxStep);
+        
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -149,14 +173,14 @@ public class Transporter_agent : Agent
         return useraction;
     }
 
-    public override void AgentReset() //remember to reset any properties that need to be reset at episode start. any agent variables or states?
+    public override void OnEpisodeBegin() //remember to reset any properties that need to be reset at episode start. any agent variables or states?
     {
         // transporter_arena.ResetArea();
 
         if (gameObject.transform.childCount > 3)
         {
           Destroy(gameObject.transform.GetChild(3).gameObject); 
-          Destroy(gameObject.transform.GetChild(4).gameObject); //this appears to fix the duplicate balls. update other file
+          Destroy(gameObject.transform.GetChild(4).gameObject); //this appears to fix the duplicate balls.
         }
         item_carried = 0;//0,1,2
         has_passed = 0;//0,1,2
