@@ -14,31 +14,26 @@ public class Transporter_Arena : MonoBehaviour
     // public Tball tball;
     public GameObject spawnbox;
     public GameObject sinkbox;
-    // public TextMeshPro cumulative_R;
+    public TextMeshPro cumulative_R;
     public TextMeshPro timeText;
+    public TextMeshPro EpisodeText;
     public int NumberAgents;
     // public List<int[]> A = new List<int[]>();
-    int[,] mode_freqs = new int[4,3]; //[ID 0 1 2]
+    float[,] mode_freqs = new float[4,3]; //first index is agent id and second is counts(must be as floats for writecsv function) of the number of steps they were in a certain state namely item-carried = 0,1,2
+    // var maxstepsinEpisode = new var {agent_p.GetComponent<Transporter_agent>().maxStep};
     
 
 
-    string filename = "D:/Unity/Transporters/mode_freq_episode.csv"; 
+    string filename_modefreq = "D:/Unity/Transporters/mode_freq_episode_agent1.csv"; 
+    string filename_rewards = "D:/Unity/Transporters/episode_rewards_agent1.csv"; 
+
 
     private void Start()
-    {
-        // var mode_freqs_increment = GetComponentInChildren<Transporter_agent>().mode_freqs;
-        // 
+    {    
         // WriteArrayToCSV(agent_p.mode_freqs, filename);
         ResetArea();
         // List<int[]> A = new List<int[]>(); // for a potentially quicker fix just write each row separately and attach the id number to the right side.
 
-        // GameObject[] agents = GameObject.FindGameObjectsWithTag("agent");
-        // foreach (GameObject p in agents)
-        // {
-        //     A.Add(p.GetComponent<Transporter_agent>().mode_freqs);
-        // }
-        // agent_p.GetComponent<Transporter_agent>().WriteArrayToCSV(A, filename);
-        
     }
 
 
@@ -73,12 +68,10 @@ public class Transporter_Arena : MonoBehaviour
                 p.GetComponent<Transporter_agent>().has_received = 0;
                 p.GetComponent<Transporter_agent>().item_carried = 2; 
             }
-            // p.GetComponent<Transform>().up = new Vector3(0,1,0); you cant modify transform directly
-            // p.GetComponent<Transform>().Rotate(transform.right, -transform.rotation.x, Space.Self);
-            // p.GetComponent<Transform>().Rotate(transform.forward, -transform.rotation.z, Space.Self);
-            CheckViolations(p);
 
-            mode_freqs[p.GetComponent<Transporter_agent>().ID, p.GetComponent<Transporter_agent>().item_carried]  += 1; 
+            CheckViolations(p);
+            //INCREMENT COUNTS based on the state the agents are in this frame:
+            mode_freqs[p.GetComponent<Transporter_agent>().ID, p.GetComponent<Transporter_agent>().item_carried]  += 1f; //record data on each agent!
             
         }
 
@@ -109,26 +102,35 @@ public class Transporter_Arena : MonoBehaviour
         // foreach (GameObject p in agents)
         // {
         //     cum_R += p.GetComponent<Transporter_agent>().GetCumulativeReward();
-        //     if ((transform.Rotation.x != 0)|(transform.Rotation.y != 0))
-        //         {}
+            
         // }
+        // Debug.Log(cum_R);
         // cumulative_R.text = agent_p.GetCumulativeReward().ToString("0.0");
         // cumulative_R.text = cum_R.ToString("0.00");
-        timeText.text = agent_p.StepCount.ToString("0"); //STEPS
+
+        timeText.text = "Steps: " + agent_p.StepCount.ToString("0"); //STEPS
+        EpisodeText.text = "Episode: " + Math.Floor((double)Academy.Instance.TotalStepCount / agent_p.GetComponent<Transporter_agent>().maxStep).ToString("0"); //episode counter
         // timeText.text = agent_p.StepCount.ToString("0");
         // timeText.text =tt.ToString("0.0");
         UpdateAgentProperties();
 
 
-
-        if (Academy.Instance.StepCount % agent_p.GetComponent<Transporter_agent>().maxStep == 0) //(Academy.Instance.EpisodeCount == nextEpisodeID)
+//  write data to csv:
+        if ((Academy.Instance.StepCount + 1) % agent_p.GetComponent<Transporter_agent>().maxStep == 0) //(the "+1" and the parentheses are both important. you will get a cum_R=0 without +1 (we evaluate rewards at the last step before the episodes resets. +0 would mean the first step of new episode)
         {
             // Debug.Log("Writing to CSV: " + string.Join(",", mode_freqs));
-            int[,] total = new int[1,1] {{Academy.Instance.TotalStepCount}};
-            WriteArrayToCSV(total, filename);
-            WriteArrayToCSV(mode_freqs, filename);
+   
+            WriteArrayToCSV(mode_freqs, filename_modefreq, false);
             
-            
+            GameObject[] agents = GameObject.FindGameObjectsWithTag("agent");
+            float cum_R = 0;
+            foreach (GameObject p in agents)
+            {
+                cum_R += p.GetComponent<Transporter_agent>().GetCumulativeReward();
+                // Debug.Log(cum_R);
+            }
+            float[,] episode_data = new float[1,2] {{Convert.ToSingle(Math.Floor((double)Academy.Instance.TotalStepCount / agent_p.GetComponent<Transporter_agent>().maxStep)), cum_R}};
+            WriteArrayToCSV(episode_data, filename_rewards, true);
 
         }
 
@@ -148,25 +150,41 @@ public class Transporter_Arena : MonoBehaviour
 
     }
 
-    public void WriteArrayToCSV(int[,] data, string file)
+    public void WriteArrayToCSV(float[,] data, string file, bool append)
     {
-        // string filename = "D:/ml-agents-release-0.15.1/ml-agents-release-0.15.1/Project/Assets/ML-Agents/Examples/Thermoregulators/extracted_data/group_mean_Tp_RTg_2.csv";
-        using (var writer = new StreamWriter(file, append: true))
+        if (append)
         {
-            for (int i = 0; i < data.GetLength(0); i++)
+        // string filename = "D:/ml-agents-release-0.15.1/ml-agents-release-0.15.1/Project/Assets/ML-Agents/Examples/Thermoregulators/extracted_data/group_mean_Tp_RTg_2.csv";
+            using (var writer = new StreamWriter(file, append: true))
             {
-                IEnumerable row = ExtractRow(data, i);     //get Enumerator representing/generating the ith row
-                int[] rowarray = row.Cast<int>().ToArray(); // cast it as an array of ints
-                string row_string = string.Join(",", rowarray); //convert array to string separated by commas
-                writer.WriteLine(row_string);  //write each line to csv
+                for (int i = 0; i < data.GetLength(0); i++)
+                {
+                    IEnumerable row = ExtractRow(data, i);     //get Enumerator representing/generating the ith row
+                    float[] rowarray = row.Cast<float>().ToArray(); // cast it as an array of ints
+                    string row_string = string.Join(",", rowarray); //convert array to string separated by commas
+                    writer.WriteLine(row_string);  //write each line to csv
+                }
+            
             }
-        
         }
+        else
+        {
+            using (var writer = new StreamWriter(file))
+            {
+                for (int i = 0; i < data.GetLength(0); i++)
+                {
+                    IEnumerable row = ExtractRow(data, i);     //get Enumerator representing/generating the ith row
+                    float[] rowarray = row.Cast<float>().ToArray(); // cast it as an array of ints
+                    string row_string = string.Join(",", rowarray); //convert array to string separated by commas
+                    writer.WriteLine(row_string);  //write each line to csv
+                }
+            
+            }
 
-
+        }
     }
 
-    public static IEnumerable ExtractRow(int[,] array, int row) //this is an extention method
+    public static IEnumerable ExtractRow(float[,] array, int row) //this is an extention method
     {
         for (var i = 0; i < array.GetLength(1); i++)
         {

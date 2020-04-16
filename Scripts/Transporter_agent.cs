@@ -14,7 +14,6 @@ public class Transporter_agent : Agent
     public float speed;
     public int ID;
 
-    string filename = "D:/Unity/Transporters/mode_freq_episode.csv";
 
     private Transporter_Arena transporter_arena;//since this is the parent object it cant be linked in as a private var
     public GameObject Sphere;
@@ -26,7 +25,6 @@ public class Transporter_agent : Agent
 
 
     // public int[] mode_freqs = new int[4] {0,0,0,0}; //the code breaks unless this variable is private!
-    int nextEpisodeID = 1;
     
 
     public override void Initialize()
@@ -63,7 +61,7 @@ public class Transporter_agent : Agent
     {
         sensor.AddObservation(transform.forward);
         sensor.AddOneHotObservation((int)item_carried, 3);
-        sensor.AddOneHotObservation(ID, 6);
+        sensor.AddOneHotObservation(1, 6); //use (ID, 6) to include all agent types
     }
 
     public override void OnActionReceived(float[] vectorAction)
@@ -201,7 +199,7 @@ public class Transporter_agent : Agent
         int children = transform.childCount;
         if (children > 3)
         {
-            Debug.Log("on episode begin childcount  " + transform.childCount.ToString());
+            // Debug.Log("on episode begin childcount  " + transform.childCount.ToString());
             ClearExtraBalls();
                             // Destroy(gameObject.transform.GetChild(3).gameObject); 
         }
@@ -219,32 +217,6 @@ public class Transporter_agent : Agent
         // WriteArrayToCSV(mode_freqs, filename);
         // }
     }
-
-    // public void WriteArrayToCSV(int[] data, string file)
-    // {
-    //     // string filename = "D:/ml-agents-release-0.15.1/ml-agents-release-0.15.1/Project/Assets/ML-Agents/Examples/Thermoregulators/extracted_data/group_mean_Tp_RTg_2.csv";
-    //     using (var writer = new StreamWriter(file, append: true))
-    //     {
-    //         for (int i = 0; i < data.GetLength(0); i++)
-    //         {
-    //             // IEnumerable row = ExtractRow(data, i);     //get Enumerator representing/generating the ith row
-    //             // int[] rowarray = row.Cast<int>().ToArray(); // cast it as an array of ints
-    //             string row_string = string.Join(",", data); //convert array to string separated by commas
-    //             writer.WriteLine(row_string);  //write each line to csv
-    //         }
-        
-    //     }
-
-
-    // }
-
-    // public static IEnumerable ExtractRow(int[,] array, int row) //this is an extention method
-    // {
-    //     for (var i = 0; i < array.GetLength(1); i++)
-    //     {
-    //         yield return array[row, i];
-    //     }
-    // }
 
     public void ClearExtraBalls()
     {
