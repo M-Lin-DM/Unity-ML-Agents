@@ -1,4 +1,3 @@
-﻿
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,7 +14,7 @@ public class Transporter_agent : Agent
     public float speed;
     public int ID;
 
-    // string filename = "D:/ml-agents-master/ml-agents-master/ObservationData/test1.csv";
+    string filename = "D:/Unity/Transporters/mode_freq_episode.csv";
 
     private Transporter_Arena transporter_arena;//since this is the parent object it cant be linked in as a private var
     public GameObject Sphere;
@@ -25,9 +24,9 @@ public class Transporter_agent : Agent
     public int has_passed = 0;//0,1,2
     public int has_received = 0;
 
-    public int[,] mode_freqs = new int[4,3];
 
-    // string filename = "D:/Unity/Transporters/mode_freq_episode.csv"; 
+    // public int[] mode_freqs = new int[4] {0,0,0,0}; //the code breaks unless this variable is private!
+    int nextEpisodeID = 1;
     
 
     public override void Initialize()
@@ -35,38 +34,36 @@ public class Transporter_agent : Agent
         base.Initialize();
         rb = GetComponent<Rigidbody>();
         transporter_arena = GetComponentInParent<Transporter_Arena>();
+        // mode_freqs[0] = ID;
+        // Debug.Log(mode_freqs[0].ToString());
 
     }
 
-    // // // Update is called once per frame
+    // // Update is called once per frame
     // void FixedUpdate() //it doesnt seem possible to pull in data from the sensor components. specifically the raycast. unity may fix later
     // {
-        
-    //     using(var writer = new StreamWriter(filename, append: true))
-    //     {
-    //         // SensorComponent[] sensors = GetComponents<SensorComponent>();
-    //         // RayPerceptionSensor sensor = gameObject.GetComponent<RayPerceptionSensor>();
-    //         string AllSensorsObs = null;
-    //         // foreach (var component in Sensorlist)
-    //         // {
+    //     // if (Academy.Instance.StepCount % 10 == 0)
+    //     // {
+    //     //     mode_freqs[item_carried + 1] = mode_freqs[item_carried + 1] + 1;
             
-    //         float[] rowarray = sensor.M_Observations_get.Cast<float>().ToArray(); // cast it as an array of ints
-    //         string sensor_string = string.Join(",", rowarray); //convert array to string separated by commas
-    //         AllSensorsObs += "," + sensor_string;
+    //     //     // Debug.Log(string.Join(",", mode_freqs));
+    //     // }
+
+    //     // if (Academy.Instance.StepCount % maxStep == 0) //(Academy.Instance.EpisodeCount == nextEpisodeID)
+    //     // {
+    //     //     Debug.Log("Writing to CSV: " + string.Join(",", mode_freqs));
+    //     //     WriteArrayToCSV(mode_freqs, filename);
             
-    //         // }
-    //         writer.WriteLine(AllSensorsObs);  //write each line to csv
-    //     }
+    //     //     // Debug.Log("episodecount: " + Academy.Instance.EpisodeCount.ToString() + " nextID:" + nextEpisodeID.ToString()); // THe episodecount doenst appear to increase?
+    //     //     // nextEpisodeID +=1;
+    //     // }
     // }
 
-    
     public override void CollectObservations(VectorSensor sensor)
     {
         sensor.AddObservation(transform.forward);
         sensor.AddOneHotObservation((int)item_carried, 3);
         sensor.AddOneHotObservation(ID, 6);
-
-
     }
 
     public override void OnActionReceived(float[] vectorAction)
@@ -94,17 +91,10 @@ public class Transporter_agent : Agent
 
         AddReward(-1f / maxStep);
 
-        // mode_freqs[ID, (int)item_carried] += 1;
-
-        // if (maxStepReached)
-        // {
-        //     WriteArrayToCSV(mode_freqs, filename);
-        // }
         if (transform.childCount > 4)
         {
         Debug.Log("Attempting destroy - onactionreceived" + transform.childCount.ToString() + " ID: " + ID.ToString()); //the issue is once the item carried changes in the first contacting agent, the second if statement cant be triggered in the contacted agent!
-        // Destroy(gameObject.transform.GetChild(3).gameObject);
-        // ClearExtraBalls();
+
         }
         
     }
@@ -209,12 +199,11 @@ public class Transporter_agent : Agent
     {
         // transporter_arena.ResetArea();
         int children = transform.childCount;
-        if (children > 4)
+        if (children > 3)
         {
             Debug.Log("on episode begin childcount  " + transform.childCount.ToString());
             ClearExtraBalls();
                             // Destroy(gameObject.transform.GetChild(3).gameObject); 
-
         }
         // Destroy(gameObject);
         item_carried = 0;//0,1,2
@@ -225,20 +214,22 @@ public class Transporter_agent : Agent
         transform.position = new Vector3(UnityEngine.Random.Range(-20, 20), 0.5f, UnityEngine.Random.Range(-20, 20));  
 
         // GetComponentInParent<Transporter_Arena>().WriteArrayToCSV(mode_freqs, filename);
+        // if (ID == 0)
+        // {
         // WriteArrayToCSV(mode_freqs, filename);
-
+        // }
     }
 
-    // public void WriteArrayToCSV(int[,] data, string file)
+    // public void WriteArrayToCSV(int[] data, string file)
     // {
     //     // string filename = "D:/ml-agents-release-0.15.1/ml-agents-release-0.15.1/Project/Assets/ML-Agents/Examples/Thermoregulators/extracted_data/group_mean_Tp_RTg_2.csv";
     //     using (var writer = new StreamWriter(file, append: true))
     //     {
     //         for (int i = 0; i < data.GetLength(0); i++)
     //         {
-    //             IEnumerable row = ExtractRow(data, i);     //get Enumerator representing/generating the ith row
-    //             int[] rowarray = row.Cast<int>().ToArray(); // cast it as an array of ints
-    //             string row_string = string.Join(",", rowarray); //convert array to string separated by commas
+    //             // IEnumerable row = ExtractRow(data, i);     //get Enumerator representing/generating the ith row
+    //             // int[] rowarray = row.Cast<int>().ToArray(); // cast it as an array of ints
+    //             string row_string = string.Join(",", data); //convert array to string separated by commas
     //             writer.WriteLine(row_string);  //write each line to csv
     //         }
         
